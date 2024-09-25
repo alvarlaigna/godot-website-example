@@ -1,7 +1,7 @@
 name: "Publish to GitHub Pages"
 
 env:
-  GODOT_VERSION: 4.3
+  GODOT_VERSION: 4.2.1
 
 on:
   workflow_dispatch:
@@ -24,7 +24,7 @@ jobs:
 
       - name: Download and install export templates
         run: |
-          wget https://github.com/godotengine/godot-builds/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz
+          wget https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_export_templates.tpz
           mkdir -p ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
           unzip Godot_v${GODOT_VERSION}-stable_export_templates.tpz -d ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
           mv ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable/templates/* ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
@@ -35,15 +35,19 @@ jobs:
         run: mkdir -v -p build
 
       - name: Build
-        run: godot -v --export-release --headless "Web" build/index.html project.godot
+        run: |
+          mkdir -v -p ~/.config/godot
+          godot --headless --verbose --export-release "Web" build/index.html
 
       - name: Add coi-service-worker
+        if: success()
         run: |
           git clone https://github.com/gzuidhof/coi-serviceworker.git
           mv coi-serviceworker/coi-serviceworker.js build/coi-serviceworker.js
           sed -i '3 i <script src="coi-serviceworker.js"></script>' build/index.html
 
       - name: Deploy
+        if: success()
         uses: peaceiris/actions-gh-pages@v3.9.3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
